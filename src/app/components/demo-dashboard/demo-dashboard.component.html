@@ -1,0 +1,17 @@
+<div class="demo-container">
+  <h1>Dashboard Widget Manager Demo</h1>
+  
+  <!-- With API enabled (default) -->
+  <app-dashboard-widget-manager 
+    [(widgets)]="widgets" 
+    [apiEnabled]="true"
+    [availableWidgets]="availableWidgets"
+    [gridType]="gridType">
+  </app-dashboard-widget-manager>
+  
+  <!-- Or localStorage only -->
+  <!-- <app-dashboard-widget-manager 
+    [(widgets)]="widgets" 
+    [apiEnabled]="false">
+  </app-dashboard-widget-manager> -->
+</div>

@@ -308,6 +308,12 @@ gridster {
   margin: 8px 0;
 }
 
+.layout-actions-row {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
 .drawer-action-btn {
   display: flex;
   align-items: center;
@@ -335,5 +341,19 @@ gridster {
 
   &:active {
     transform: translateX(2px);
+  }
+  
+  &.compact {
+    flex: 1;
+    padding: 12px;
+    justify-content: center;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
   }
 }

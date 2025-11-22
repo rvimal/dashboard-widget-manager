@@ -17,6 +17,25 @@
   
   <div class="drawer-content">
     <div class="drawer-section">
+      <h4>Layout Actions</h4>
+      <div class="layout-actions-row">
+        <button class="drawer-action-btn compact" (click)="deleteAllWidgets()" title="Delete All Widgets">
+          <span class="material-icons">delete_sweep</span>
+        </button>
+        
+        <button class="drawer-action-btn compact" (click)="saveLayout()" title="Save Layout">
+          <span class="material-icons">save</span>
+        </button>
+        
+        <button class="drawer-action-btn compact" (click)="resetLayout()" title="Reset Layout">
+          <span class="material-icons">refresh</span>
+        </button>
+      </div>
+    </div>
+    
+    <div class="drawer-divider"></div>
+    
+    <div class="drawer-section">
       <h4>Add Widget</h4>
       <div class="widget-list">
         <button 
@@ -27,26 +46,6 @@
           <span class="widget-type-name">{{ widgetType.name }}</span>
         </button>
       </div>
-    </div>
-    
-    <div class="drawer-divider"></div>
-    
-    <div class="drawer-section">
-      <h4>Layout Actions</h4>
-      <button class="drawer-action-btn" (click)="deleteAllWidgets()">
-        <span class="material-icons">delete_sweep</span>
-        <span>Delete All Widgets</span>
-      </button>
-      
-      <button class="drawer-action-btn" (click)="saveLayout()">
-        <span class="material-icons">save</span>
-        <span>Save Layout</span>
-      </button>
-      
-      <button class="drawer-action-btn" (click)="resetLayout()">
-        <span class="material-icons">refresh</span>
-        <span>Reset Layout</span>
-      </button>
     </div>
   </div>
 </div>

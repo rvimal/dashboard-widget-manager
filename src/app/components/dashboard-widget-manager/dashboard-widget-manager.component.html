@@ -1,13 +1,13 @@
 <!-- Floating Action Button -->
-<button class="fab" (click)="openDrawer()" title="Dashboard Actions">
+<button class="fab" *ngIf="permissions.canShowDrawer" (click)="openDrawer()" title="Dashboard Actions">
   <span class="material-icons">chevron_left</span>
 </button>
 
 <!-- Drawer Overlay -->
-<div class="drawer-overlay" [class.open]="drawerOpen" (click)="closeDrawer()"></div>
+<div class="drawer-overlay" *ngIf="permissions.canShowDrawer" [class.open]="drawerOpen" (click)="closeDrawer()"></div>
 
 <!-- Drawer -->
-<div class="drawer" [class.open]="drawerOpen">
+<div class="drawer" *ngIf="permissions.canShowDrawer" [class.open]="drawerOpen">
   <div class="drawer-header">
     <h3>Dashboard Actions</h3>
     <button class="close-btn" (click)="closeDrawer()" title="Close">
@@ -16,7 +16,7 @@
   </div>
   
   <div class="drawer-content">
-    <div class="drawer-section">
+    <div class="drawer-section" *ngIf="permissions.canManageLayout">
       <h4>Layout Actions</h4>
       <div class="layout-actions-row">
         <button class="drawer-action-btn compact" (click)="deleteAllWidgets()" title="Delete All Widgets">
@@ -33,9 +33,9 @@
       </div>
     </div>
     
-    <div class="drawer-divider"></div>
+    <div class="drawer-divider" *ngIf="permissions.canManageLayout && permissions.canAddWidgets"></div>
     
-    <div class="drawer-section">
+    <div class="drawer-section" *ngIf="permissions.canAddWidgets">
       <h4>Add Widget</h4>
       <div class="widget-list">
         <button 
@@ -53,13 +53,14 @@
 <gridster [options]="options">
   <gridster-item [item]="widget" *ngFor="let widget of widgets; let i = index">
     <div class="widget-wrapper">
-      <div class="widget-header" [class.locked]="widget.locked">
+      <div class="widget-header" *ngIf="permissions.canEditWidgets" [class.locked]="widget.locked">
         <div class="widget-title">
-          <span class="drag-icon drag-handle" [class.disabled]="widget.locked">⋮⋮</span>
+          <span class="drag-icon drag-handle" *ngIf="permissions.canDragWidgets" [class.disabled]="widget.locked">⋮⋮</span>
           <h3>{{ widget.title || 'Widget ' + widget.id }}</h3>
         </div>
         <div class="widget-actions">
           <button 
+            *ngIf="permissions.canDragWidgets || permissions.canResizeWidgets"
             class="action-btn lock-btn" 
             (click)="toggleLock(widget)"
             [title]="widget.locked ? 'Unlock' : 'Lock'"
@@ -68,6 +69,7 @@
             <span class="material-icons" *ngIf="!widget.locked">lock_open</span>
           </button>
           <button 
+            *ngIf="permissions.canDeleteWidgets"
             class="action-btn delete-btn" 
             (click)="removeWidget(widget.id)"
             title="Delete">
@@ -75,7 +77,7 @@
           </button>
         </div>
       </div>
-      <div class="widget-content">
+      <div class="widget-content" [class.no-header]="!permissions.canEditWidgets">
         <!-- Dynamic component container -->
         <ng-container #widgetContainer></ng-container>
       </div>

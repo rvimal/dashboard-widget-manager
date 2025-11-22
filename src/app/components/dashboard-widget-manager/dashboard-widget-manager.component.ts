@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, ViewContainerRef, ComponentRef, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { GridsterConfig, GridsterItem, GridType } from 'angular-gridster2';
-import { WidgetItem, WidgetType } from '../../models/widget.model';
+import { WidgetItem, WidgetType, DashboardWidgetPermissionsConfig } from '../../models/widget.model';
 import { DashboardService } from '../../services/dashboard.service';
 import { ChartWidgetComponent } from '../widgets/chart-widget/chart-widget.component';
 import { StatsWidgetComponent } from '../widgets/stats-widget/stats-widget.component';
@@ -23,6 +23,7 @@ import { StatsWidgetComponent } from '../widgets/stats-widget/stats-widget.compo
  * @Input apiEnabled - Enable/disable API-based persistence (falls back to localStorage if false)
  * @Input availableWidgets - Array of widget types that can be added to the dashboard
  * @Input gridType - Grid type for the dashboard (default: GridType.Fixed)
+ * @Input permissions - Permission flags to control feature visibility and functionality
  * @Output widgetsChange - Emits when widgets array changes (for two-way binding)
  */
 @Component({
@@ -36,6 +37,15 @@ export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
   @Input() apiEnabled: boolean = true; // Toggle API usage
   @Input() availableWidgets: WidgetType[] = []; // Widget types provided by parent component
   @Input() gridType: GridType = GridType.Fixed; // Grid type (default: Fixed)
+  @Input() permissions: DashboardWidgetPermissionsConfig = {
+    canShowDrawer: true,
+    canManageLayout: true,
+    canAddWidgets: true,
+    canEditWidgets: true,
+    canDeleteWidgets: true,
+    canResizeWidgets: true,
+    canDragWidgets: true
+  };
   @Output() widgetsChange = new EventEmitter<WidgetItem[]>();
   @ViewChildren('widgetContainer', { read: ViewContainerRef }) widgetContainers!: QueryList<ViewContainerRef>;
 
@@ -58,6 +68,10 @@ export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
       if (item.locked) {
         item.dragEnabled = false;
         item.resizeEnabled = false;
+      } else {
+        // Apply permission-based restrictions
+        item.dragEnabled = this.permissions.canDragWidgets !== false;
+        item.resizeEnabled = this.permissions.canResizeWidgets !== false;
       }
     }
   };
@@ -67,6 +81,13 @@ export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     // Update gridType in options after input is set
     this.options.gridType = this.gridType;
+    // Apply permission-based configuration
+    if (this.options.draggable) {
+      this.options.draggable.enabled = this.permissions.canDragWidgets !== false;
+    }
+    if (this.options.resizable) {
+      this.options.resizable.enabled = this.permissions.canResizeWidgets !== false;
+    }
     this.loadLayout();
   }
 
@@ -211,9 +232,9 @@ export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
 
   toggleLock(widget: WidgetItem) {
     widget.locked = !widget.locked;
-    // Disable/enable drag and resize for this specific widget
-    widget.dragEnabled = !widget.locked;
-    widget.resizeEnabled = !widget.locked;
+    // Disable/enable drag and resize for this specific widget, respecting permissions
+    widget.dragEnabled = !widget.locked && this.permissions.canDragWidgets !== false;
+    widget.resizeEnabled = !widget.locked && this.permissions.canResizeWidgets !== false;
     this.saveLayout();
     // Force gridster to update
     if (this.options.api && this.options.api.optionsChanged) {

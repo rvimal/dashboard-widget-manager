@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { WidgetItem, WidgetType } from '../../models/widget.model';
+import { WidgetItem, WidgetType, DashboardWidgetPermissionsConfig } from '../../models/widget.model';
 import { ChartWidgetComponent } from '../widgets/chart-widget/chart-widget.component';
 import { StatsWidgetComponent } from '../widgets/stats-widget/stats-widget.component';
 import { GridType } from 'angular-gridster2';
@@ -13,6 +13,40 @@ import { GridType } from 'angular-gridster2';
 export class DemoDashboardComponent {
   // Optional: Define gridType here (can be changed dynamically)
   gridType: GridType = GridType.Fixed; // or GridType.Fit, GridType.ScrollVertical, etc.
+
+  // Define permissions configuration
+  // Set to true/false or remove properties to use defaults (all true)
+  dashboardPermissions: DashboardWidgetPermissionsConfig = {
+    canShowDrawer: true,        // Show/hide FAB and drawer
+    canManageLayout: true,      // Show/hide layout actions (save, reset, delete all)
+    canAddWidgets: true,        // Show/hide add widget section
+    canEditWidgets: true,       // Show/hide widget headers
+    canDeleteWidgets: false,     // Show/hide delete buttons
+    canResizeWidgets: true,     // Enable/disable resize
+    canDragWidgets: true        // Enable/disable drag
+  };
+
+  // Example: Read-only mode (uncomment to test)
+  // dashboardPermissions: DashboardWidgetPermissionsConfig = {
+  //   canShowDrawer: false,
+  //   canManageLayout: false,
+  //   canAddWidgets: false,
+  //   canEditWidgets: false,
+  //   canDeleteWidgets: false,
+  //   canResizeWidgets: false,
+  //   canDragWidgets: false
+  // };
+
+  // Example: View-only with drawer (uncomment to test)
+  // dashboardPermissions: DashboardWidgetPermissionsConfig = {
+  //   canShowDrawer: true,
+  //   canManageLayout: false,
+  //   canAddWidgets: false,
+  //   canEditWidgets: false,
+  //   canDeleteWidgets: false,
+  //   canResizeWidgets: false,
+  //   canDragWidgets: false
+  // };
 
   availableWidgets: WidgetType[] = [
     {

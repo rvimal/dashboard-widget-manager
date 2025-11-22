@@ -25,3 +25,13 @@ export interface WidgetType {
     content?: any;
   };
 }
+
+export interface DashboardWidgetPermissionsConfig {
+  canShowDrawer?: boolean;        // Controls FAB button and drawer visibility
+  canManageLayout?: boolean;      // Controls layout action buttons (save, reset, delete all)
+  canAddWidgets?: boolean;        // Controls add widget section in drawer
+  canEditWidgets?: boolean;       // Controls widget header visibility and edit actions
+  canDeleteWidgets?: boolean;     // Controls delete button on individual widgets
+  canResizeWidgets?: boolean;     // Controls resize functionality
+  canDragWidgets?: boolean;       // Controls drag functionality
+}

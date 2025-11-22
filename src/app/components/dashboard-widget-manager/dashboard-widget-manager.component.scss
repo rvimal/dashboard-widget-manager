@@ -111,6 +111,10 @@ gridster {
   flex: 1;
   padding: 16px;
   overflow: auto;
+  
+  &.no-header {
+    padding: 0;
+  }
 }
 
 // Component container needs relative positioning

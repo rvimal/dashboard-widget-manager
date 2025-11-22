@@ -1,7 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, ViewContainerRef, ComponentRef, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { GridsterConfig, GridsterItem, GridType } from 'angular-gridster2';
 import { WidgetItem, WidgetType, DashboardWidgetPermissionsConfig } from '../../models/widget.model';
-import { DashboardService } from '../../services/dashboard.service';
 import { ChartWidgetComponent } from '../widgets/chart-widget/chart-widget.component';
 import { StatsWidgetComponent } from '../widgets/stats-widget/stats-widget.component';
 
@@ -14,17 +13,21 @@ import { StatsWidgetComponent } from '../widgets/stats-widget/stats-widget.compo
  * ```html
  * <app-dashboard-widget-manager 
  *   [(widgets)]="widgets" 
- *   [apiEnabled]="true"
- *   [availableWidgets]="availableWidgets">
+ *   [availableWidgets]="availableWidgets"
+ *   (onSaveLayout)="handleSaveLayout($event)"
+ *   (onLoadLayout)="handleLoadLayout()"
+ *   (onResetLayout)="handleResetLayout()">
  * </app-dashboard-widget-manager>
  * ```
  * 
  * @Input widgets - Array of widget items to display on the dashboard
- * @Input apiEnabled - Enable/disable API-based persistence (falls back to localStorage if false)
  * @Input availableWidgets - Array of widget types that can be added to the dashboard
  * @Input gridType - Grid type for the dashboard (default: GridType.Fixed)
  * @Input permissions - Permission flags to control feature visibility and functionality
  * @Output widgetsChange - Emits when widgets array changes (for two-way binding)
+ * @Output onSaveLayout - Emits when layout should be saved (parent handles persistence)
+ * @Output onLoadLayout - Emits when layout should be loaded (parent handles loading)
+ * @Output onResetLayout - Emits when layout should be reset (parent handles reset)
  */
 @Component({
   selector: 'app-dashboard-widget-manager',
@@ -34,7 +37,6 @@ import { StatsWidgetComponent } from '../widgets/stats-widget/stats-widget.compo
 })
 export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
   @Input() widgets: WidgetItem[] = [];
-  @Input() apiEnabled: boolean = true; // Toggle API usage
   @Input() availableWidgets: WidgetType[] = []; // Widget types provided by parent component
   @Input() gridType: GridType = GridType.Fixed; // Grid type (default: Fixed)
   @Input() permissions: DashboardWidgetPermissionsConfig = {
@@ -47,6 +49,9 @@ export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
     canDragWidgets: true
   };
   @Output() widgetsChange = new EventEmitter<WidgetItem[]>();
+  @Output() onSaveLayout = new EventEmitter<WidgetItem[]>();
+  @Output() onLoadLayout = new EventEmitter<void>();
+  @Output() onResetLayout = new EventEmitter<void>();
   @ViewChildren('widgetContainer', { read: ViewContainerRef }) widgetContainers!: QueryList<ViewContainerRef>;
 
   drawerOpen: boolean = false;
@@ -76,7 +81,7 @@ export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
     }
   };
 
-  constructor(private dashboardService: DashboardService) {}
+  constructor() {}
 
   ngOnInit() {
     // Update gridType in options after input is set
@@ -88,7 +93,6 @@ export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
     if (this.options.resizable) {
       this.options.resizable.enabled = this.permissions.canResizeWidgets !== false;
     }
-    this.loadLayout();
   }
 
   ngAfterViewInit() {
@@ -116,46 +120,7 @@ export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
   }
 
   saveLayout() {
-    if (this.apiEnabled) {
-      this.dashboardService.saveLayout(this.widgets).subscribe();
-    } else {
-      localStorage.setItem('dashboard-layout', JSON.stringify(this.widgets));
-    }
-  }
-
-  loadLayout() {
-    if (this.apiEnabled) {
-      this.dashboardService.loadLayout().subscribe(layout => {
-        if (layout && layout.length > 0) {
-          this.widgets = layout;
-          // Restore component references based on type
-          this.widgets.forEach(widget => {
-            if (widget.type && !widget.component) {
-              const widgetType = this.availableWidgets.find(wt => wt.type === widget.type);
-              if (widgetType) {
-                widget.component = widgetType.component;
-              }
-            }
-          });
-          setTimeout(() => this.loadAllComponents(), 0);
-        }
-      });
-    } else {
-      const saved = localStorage.getItem('dashboard-layout');
-      if (saved) {
-        this.widgets = JSON.parse(saved);
-        // Restore component references based on type
-        this.widgets.forEach(widget => {
-          if (widget.type && !widget.component) {
-            const widgetType = this.availableWidgets.find(wt => wt.type === widget.type);
-            if (widgetType) {
-              widget.component = widgetType.component;
-            }
-          }
-        });
-        setTimeout(() => this.loadAllComponents(), 0);
-      }
-    }
+    this.onSaveLayout.emit(this.widgets);
   }
 
   openDrawer() {
@@ -211,8 +176,8 @@ export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
         this.widgetContainers.forEach(container => container.clear());
       }
       this.widgets = [];
-      this.saveLayout();
       this.widgetsChange.emit(this.widgets);
+      this.saveLayout();
       this.closeDrawer();
     }
   }
@@ -223,9 +188,9 @@ export class DashboardWidgetManagerComponent implements OnInit, AfterViewInit {
       if (this.widgetContainers) {
         this.widgetContainers.forEach(container => container.clear());
       }
-      localStorage.removeItem('dashboard-layout');
       this.widgets = [];
-      this.loadLayout();
+      this.widgetsChange.emit(this.widgets);
+      this.onResetLayout.emit();
       this.closeDrawer();
     }
   }

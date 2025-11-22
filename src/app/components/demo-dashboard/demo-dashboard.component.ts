@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { WidgetItem, WidgetType, DashboardWidgetPermissionsConfig } from '../../models/widget.model';
 import { ChartWidgetComponent } from '../widgets/chart-widget/chart-widget.component';
 import { StatsWidgetComponent } from '../widgets/stats-widget/stats-widget.component';
 import { GridType } from 'angular-gridster2';
+import { DashboardService } from '../../services/dashboard.service';
 
 @Component({
   selector: 'app-demo-dashboard',
@@ -10,9 +11,12 @@ import { GridType } from 'angular-gridster2';
   templateUrl: './demo-dashboard.component.html',
   styleUrls: ['./demo-dashboard.component.scss']
 })
-export class DemoDashboardComponent {
+export class DemoDashboardComponent implements OnInit {
   // Optional: Define gridType here (can be changed dynamically)
   gridType: GridType = GridType.Fixed; // or GridType.Fit, GridType.ScrollVertical, etc.
+
+  // Toggle between API and localStorage
+  useApi: boolean = false; // Set to true to use API, false for localStorage only
 
   // Define permissions configuration
   // Set to true/false or remove properties to use defaults (all true)
@@ -21,7 +25,7 @@ export class DemoDashboardComponent {
     canManageLayout: true,      // Show/hide layout actions (save, reset, delete all)
     canAddWidgets: true,        // Show/hide add widget section
     canEditWidgets: true,       // Show/hide widget headers
-    canDeleteWidgets: false,     // Show/hide delete buttons
+    canDeleteWidgets: true,     // Show/hide delete buttons
     canResizeWidgets: true,     // Enable/disable resize
     canDragWidgets: true        // Enable/disable drag
   };
@@ -113,24 +117,108 @@ export class DemoDashboardComponent {
     }
   ];
 
-  widgets: WidgetItem[] = [
-    { 
-      x: 0, y: 0, cols: 2, rows: 2, id: '1', 
-      title: 'Sales Overview', 
-      component: ChartWidgetComponent,
-      content: { data: { sales: [10, 20, 30, 40] }, chartType: 'bar' }
-    },
-    { 
-      x: 2, y: 0, cols: 2, rows: 2, id: '2', 
-      title: 'Total Users', 
-      component: StatsWidgetComponent,
-      content: { title: 'Active Users', value: 1234, change: 12.5 }
-    },
-    { 
-      x: 0, y: 2, cols: 4, rows: 2, id: '3', 
-      title: 'Revenue Chart', 
-      component: ChartWidgetComponent,
-      content: { data: { revenue: [100, 200, 150, 300] }, chartType: 'line' }
+  widgets: WidgetItem[] = [];
+
+  constructor(private dashboardService: DashboardService) {}
+
+  ngOnInit() {
+    this.loadLayout();
+  }
+
+  // Handle save layout event from dashboard component
+  handleSaveLayout(widgets: WidgetItem[]) {
+    if (this.useApi) {
+      this.dashboardService.saveLayout(widgets).subscribe({
+        next: () => console.log('Layout saved to API'),
+        error: (error) => console.error('Failed to save layout to API', error)
+      });
+    } else {
+      localStorage.setItem('dashboard-layout', JSON.stringify(widgets));
+      console.log('Layout saved to localStorage');
     }
-  ];
+  }
+
+  // Handle load layout event from dashboard component
+  loadLayout() {
+    if (this.useApi) {
+      this.dashboardService.loadLayout().subscribe({
+        next: (layout) => {
+          if (layout && layout.length > 0) {
+            this.widgets = this.restoreWidgetComponents(layout);
+          } else {
+            this.widgets = this.getDefaultWidgets();
+          }
+        },
+        error: (error) => {
+          console.error('Failed to load layout from API', error);
+          this.widgets = this.getDefaultWidgets();
+        }
+      });
+    } else {
+      const saved = localStorage.getItem('dashboard-layout');
+      if (saved) {
+        try {
+          const layout = JSON.parse(saved);
+          this.widgets = this.restoreWidgetComponents(layout);
+        } catch (error) {
+          console.error('Failed to parse saved layout', error);
+          this.widgets = this.getDefaultWidgets();
+        }
+      } else {
+        this.widgets = this.getDefaultWidgets();
+      }
+    }
+  }
+
+  // Handle reset layout event from dashboard component
+  handleResetLayout() {
+    if (this.useApi) {
+      // Optionally call API to clear saved layout
+      localStorage.removeItem('dashboard-layout');
+    } else {
+      localStorage.removeItem('dashboard-layout');
+    }
+    this.widgets = this.getDefaultWidgets();
+    console.log('Layout reset');
+  }
+
+  // Restore component references based on widget type
+  private restoreWidgetComponents(widgets: WidgetItem[]): WidgetItem[] {
+    return widgets.map(widget => {
+      if (widget.type && !widget.component) {
+        const widgetType = this.availableWidgets.find(wt => wt.type === widget.type);
+        if (widgetType) {
+          widget.component = widgetType.component;
+        }
+      }
+      return widget;
+    });
+  }
+
+  // Get default widgets for initial load or reset
+  private getDefaultWidgets(): WidgetItem[] {
+    return [
+      { 
+        x: 0, y: 0, cols: 2, rows: 2, id: '1', 
+        title: 'Sales Overview', 
+        type: 'chart',
+        component: ChartWidgetComponent,
+        content: { data: { sales: [10, 20, 30, 40] }, chartType: 'bar' }
+      },
+      { 
+        x: 2, y: 0, cols: 2, rows: 2, id: '2', 
+        title: 'Total Users',
+        type: 'stats',
+        component: StatsWidgetComponent,
+        content: { title: 'Active Users', value: 1234, change: 12.5 }
+      },
+      { 
+        x: 0, y: 2, cols: 4, rows: 2, id: '3', 
+        title: 'Revenue Chart',
+        type: 'line-chart',
+        component: ChartWidgetComponent,
+        content: { data: { revenue: [100, 200, 150, 300] }, chartType: 'line' }
+      }
+    ];
+  }
 }
